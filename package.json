@@ -1,0 +1,21 @@
+{
+  "name": "foldctl",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sets the hinge angle and orientation of the iPhone Duo simulator from the command line.",
+  "keywords": ["ios", "simulator", "foldable", "iphone-duo", "xcode", "coredevice"],
+  "license": "MIT",
+  "homepage": "https://github.com/tatsuz0u/foldctl#readme",
+  "bugs": "https://github.com/tatsuz0u/foldctl/issues",
+  "repository": "github:tatsuz0u/foldctl",
+  "bin": {
+    "foldctl": "foldctl"
+  },
+  "files": [
+    "foldctl",
+    "Sources",
+    "Interfaces"
+  ],
+  "os": ["darwin"],
+  "cpu": ["arm64"]
+}

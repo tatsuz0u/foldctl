@@ -1,0 +1,45 @@
+#!/bin/zsh
+# Sets the pose (hinge angle and orientation) of the iPhone Duo simulator.
+# Builds the Swift tool on first use, and again whenever its sources or CoreDevice change.
+# Usage: foldctl <udid | name | booted> [--hinge <angle>] [--orientation <orientation>]
+set -euo pipefail
+
+root=${0:A:h}
+binary="$root/.build/foldctl"
+frameworks=/Library/Developer/PrivateFrameworks
+coredevice="$frameworks/CoreDevice.framework/Versions/A/CoreDevice"
+utilities="$frameworks/CoreDeviceUtilities.framework/Versions/A/CoreDeviceUtilities"
+
+if [[ ! -e $coredevice ]]; then
+  print -u2 "foldctl: $coredevice is missing; open Xcode once to install it"
+  exit 1
+fi
+
+needs_build=false
+if [[ ! -x $binary ]]; then
+  needs_build=true
+else
+  for input in "$root"/Sources/*.swift "$root"/Interfaces/*.swiftmodule/*.swiftinterface "$coredevice" "$utilities"; do
+    [[ $input -nt $binary ]] && needs_build=true
+  done
+fi
+
+if $needs_build; then
+  mkdir -p "$root/.build"
+  macos=$(sw_vers -productVersion | cut -d. -f1-2)
+  # Cached modules record their own path and the working directory, and the built tool no longer needs them,
+  # so each build gets a temporary cache.
+  (
+    module_cache=$(mktemp -d)
+    trap 'rm -rf "$module_cache"' EXIT
+    xcrun swiftc -parse-as-library -O \
+      -target "arm64-apple-macos$macos" \
+      -I "$root/Interfaces" \
+      -F "$frameworks" -framework CoreDevice -framework CoreDeviceUtilities \
+      -Xlinker -rpath -Xlinker "$frameworks" \
+      -module-cache-path "$module_cache" \
+      "$root/Sources/main.swift" -o "$binary"
+  ) >&2
+fi
+
+exec "$binary" "$@"

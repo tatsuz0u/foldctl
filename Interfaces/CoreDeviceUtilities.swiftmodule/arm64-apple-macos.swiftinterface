@@ -1,0 +1,36 @@
+// swift-interface-format-version: 1.0
+// swift-module-flags: -target arm64-apple-macos27.0 -enable-library-evolution -swift-version 5 -module-name CoreDeviceUtilities
+// A minimal hand-written interface for the motion types of the private CoreDeviceUtilities
+// framework. Every declaration mirrors an exported symbol of
+// /Library/Developer/PrivateFrameworks/CoreDeviceUtilities.framework.
+import Foundation
+import Swift
+
+public struct HingeAngleStreamConfig {
+  public init(changeThreshold: Foundation.Measurement<Foundation.UnitAngle>, updateInterval: Swift.Duration)
+}
+
+public struct DeviceHingeAngleSnapshot : Swift.Sendable {
+  public var angle: Foundation.Measurement<Foundation.UnitAngle> {
+    get
+  }
+  public var isAngleValid: Swift.Bool {
+    get
+  }
+}
+
+// The framework moved this enum here from CoreDevice, so its symbols keep CoreDevice's name. The
+// real enum has more cases; the tool only calls unwrappedValue().
+@available(macOS 13.0, *)
+@_originallyDefinedIn(module: "CoreDevice", macOS 14.0)
+public enum CodableValue : Swift.Sendable {
+  case int(Swift.Int)
+  case uint(Swift.UInt)
+  public func unwrappedValue() -> Any
+}
+
+public struct DeviceMotionStateSnapshot : Swift.Sendable {
+  public var properties: [Swift.String : CoreDeviceUtilities.CodableValue] {
+    get
+  }
+}

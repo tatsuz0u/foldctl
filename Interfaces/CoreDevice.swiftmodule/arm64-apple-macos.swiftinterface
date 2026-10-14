@@ -1,0 +1,93 @@
+// swift-interface-format-version: 1.0
+// swift-module-flags: -target arm64-apple-macos27.0 -enable-library-evolution -swift-version 5 -module-name CoreDevice
+// A minimal hand-written interface for the parts of the private CoreDevice framework that
+// Device Hub's pose controls use. Every declaration mirrors an exported symbol of
+// /Library/Developer/PrivateFrameworks/CoreDevice.framework.
+import CoreDeviceUtilities
+import Foundation
+import Swift
+
+public struct CoreDeviceError : Swift.Error {
+}
+
+public protocol DeviceCapability {
+  associatedtype ProtocolType
+}
+
+public protocol HIDVendorDefined {
+  func send(usagePage: Swift.UInt16, usage: Swift.UInt16, version: Swift.UInt32, data: Foundation.Data) throws(CoreDevice.CoreDeviceError)
+  func sendBarrier()
+}
+
+public struct HIDDeviceCapability {
+}
+
+public struct VendorDefinedHIDCapability : CoreDevice.DeviceCapability {
+  public typealias ProtocolType = any CoreDevice.HIDVendorDefined
+}
+
+public struct CapabilityStaticMember<Capability> {
+}
+
+public struct DeviceMotionManager {
+  public var supportsDeviceMotionState: Swift.Bool {
+    get
+  }
+  public var supportsHingeAngle: Swift.Bool {
+    get
+  }
+  public func monitorDeviceMotionState() async throws(CoreDevice.CoreDeviceError) -> Swift.AsyncThrowingStream<[CoreDeviceUtilities.DeviceMotionStateSnapshot], any Swift.Error>
+  public func monitorHingeAngle(config: CoreDeviceUtilities.HingeAngleStreamConfig) async throws(CoreDevice.CoreDeviceError) -> Swift.AsyncThrowingStream<[CoreDeviceUtilities.DeviceHingeAngleSnapshot], any Swift.Error>
+}
+
+public protocol MonitorMotionProtocol {
+  func motionManager() async throws(CoreDevice.CoreDeviceError) -> CoreDevice.DeviceMotionManager
+}
+
+public struct MonitorMotionCapability : CoreDevice.DeviceCapability {
+  public typealias ProtocolType = any CoreDevice.MonitorMotionProtocol
+}
+
+extension CoreDevice.CapabilityStaticMember where Capability : CoreDevice.DeviceCapability {
+  public static var hid: CoreDevice.CapabilityStaticMember<CoreDevice.HIDDeviceCapability>.Type {
+    get
+  }
+  public static var monitorMotion: CoreDevice.CapabilityStaticMember<CoreDevice.MonitorMotionCapability> {
+    get
+  }
+}
+
+extension CoreDevice.CapabilityStaticMember where Capability == CoreDevice.HIDDeviceCapability {
+  public static var vendorDefined: CoreDevice.CapabilityStaticMember<CoreDevice.VendorDefinedHIDCapability> {
+    get
+  }
+}
+
+public class RemoteDevice {
+  public func getImplementation<A>(for capability: CoreDevice.CapabilityStaticMember<A>) async throws -> A.ProtocolType where A : CoreDevice.DeviceCapability
+}
+
+public protocol CoreDeviceServiceConnection {
+}
+
+public struct CoreDeviceService {
+  public static var sharedConnection: any CoreDevice.CoreDeviceServiceConnection {
+    get
+  }
+}
+
+public enum DeviceVisibilityClass : Swift.Hashable {
+  case `default`
+  case simulators
+  case devicesBeingProvisioned
+  case wirelessPairableDevices
+}
+
+public class DeviceManager {
+  public init(serviceConnection: any CoreDevice.CoreDeviceServiceConnection, allowedDeviceVisibilityClasses: Swift.Set<CoreDevice.DeviceVisibilityClass>)
+  public var devices: [Foundation.UUID : CoreDevice.RemoteDevice] {
+    get
+  }
+  public func awaitFullInitialization() async
+  public func waitForPostPluginLoadCheckIn() async
+}
